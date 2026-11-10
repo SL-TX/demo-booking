@@ -97,6 +97,9 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Часовой пояс сессии Postgres. Без него наивная строка, которую Laravel
+            // отправляет в колонку timestamptz, трактуется по часовому поясу сервера.
+            'timezone' => env('DB_TIMEZONE', 'UTC'),
         ],
 
         'sqlsrv' => [

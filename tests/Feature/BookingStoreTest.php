@@ -7,6 +7,7 @@ use App\Models\Office;
 use App\Models\Room;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -293,6 +294,36 @@ class BookingStoreTest extends TestCase
             'starts_at' => '2026-11-02T07:00:00Z',
             'ends_at' => '2026-11-02T08:00:00Z',
         ])->assertCreated();
+    }
+
+    public function test_time_columns_store_timestamptz(): void
+    {
+        foreach (['starts_at', 'ends_at'] as $column) {
+            $type = DB::selectOne(
+                'SELECT data_type FROM information_schema.columns WHERE table_name = ? AND column_name = ?',
+                ['bookings', $column],
+            )->data_type;
+
+            $this->assertSame('timestamp with time zone', $type, $column);
+        }
+    }
+
+    public function test_stored_value_carries_utc_offset(): void
+    {
+        // 17:00 по Новосибирску = 13:00 по Москве = 10:00Z.
+        $response = $this->postBooking([
+            'room_id' => $this->room->id,
+            'title' => 'Планёрка',
+            'starts_at' => '2026-11-02T17:00:00+07:00',
+            'ends_at' => '2026-11-02T18:00:00+07:00',
+        ])->assertCreated();
+
+        $raw = (string) DB::table('bookings')
+            ->where('id', $response->json('id'))
+            ->value('starts_at');
+
+        $this->assertStringStartsWith('2026-11-02 10:00:00', $raw);
+        $this->assertMatchesRegularExpression('/\+\d{2}$/', $raw);
     }
 
     /**
