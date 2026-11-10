@@ -593,19 +593,28 @@ docker compose exec -T app php artisan test
 
 Ожидание: PASS, все наборы зелёные.
 
-- [ ] **Step 5: Проверить сквозную гонку вручную на стенде**
+- [ ] **Step 5: Проверить гонку сквозным запросом на стенде**
+
+Важно: `php artisan serve` **однопоточный** — Laravel передаёт дочернему процессу только `$_ENV`,
+поэтому переменная `PHP_CLI_SERVER_WORKERS` до него не доходит, и «параллельные» запросы
+выполняются последовательно. Настоящая параллельность нужна для проверки гонки, поэтому
+поднимаем встроенный сервер напрямую, с воркерами:
 
 ```sh
+# сервер с 8 воркерами (порт 8005 — внутри контейнера)
+docker compose exec -d app sh -c 'cd /app/public && PHP_CLI_SERVER_WORKERS=8 php -S 0.0.0.0:8005 /app/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php'
+
 docker compose exec -T app php artisan migrate:fresh --seed
-for i in $(seq 1 10); do
-  curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:8000/api/bookings \
-    -H "Authorization: Bearer anna-token" -H "Accept: application/json" -H "Content-Type: application/json" \
-    -d '{"room_id":1,"title":"Гонка","starts_at":"2026-11-20T10:00:00+03:00","ends_at":"2026-11-20T11:00:00+03:00"}' &
-done; wait
-docker compose exec -T postgres psql -U booking -d booking -c "SELECT count(*) FROM bookings WHERE room_id = 1;"
+docker compose exec -T app sh -c 'for i in $(seq 1 10); do curl -s -o /dev/null -w "%{http_code} " -X POST http://localhost:8005/api/bookings -H "Authorization: Bearer anna-token" -H "Accept: application/json" -H "Content-Type: application/json" -d "{\"room_id\":1,\"title\":\"Гонка\",\"starts_at\":\"2026-11-20T10:00:00+03:00\",\"ends_at\":\"2026-11-20T11:00:00+03:00\"}" & done; wait; echo'
+docker compose exec -T postgres psql -U booking -d booking -c "SELECT count(*) FROM bookings;"
 ```
 
-Ожидание: ровно один `201`, остальные `422`; в таблице `count(*) = 1`. Результат (фактические коды и количество) записать в `AI_NOTES.md` на шаге Task 7.
+Ожидание: ровно один `201`, остальные `422`, в таблице **одна** строка.
+
+Контрольный эксперимент (для `AI_NOTES.md`): если временно убрать `lockForUpdate()` и вставить
+`usleep(400000)` между проверкой конфликта и вставкой, те же 10 параллельных запросов дают
+несколько `201` и несколько строк в таблице — гонка воспроизводится. С блокировкой — снова одна
+строка. Временные правки обязательно откатываются.
 
 - [ ] **Step 6: Отформатировать и закоммитить**
 
