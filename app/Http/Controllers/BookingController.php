@@ -8,6 +8,7 @@ use App\Models\Room;
 use App\Services\BookingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 
 class BookingController extends Controller
@@ -37,9 +38,9 @@ class BookingController extends Controller
         return response()->json($booking, 201);
     }
 
-    public function destroy($id)
+    public function destroy(Booking $booking, Request $request, BookingService $bookings): Response
     {
-        Booking::findOrFail($id)->delete();
+        $bookings->delete($booking, $request->user());
 
         return response()->noContent();
     }
