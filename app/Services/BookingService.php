@@ -7,6 +7,7 @@ use App\Models\Room;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class BookingService
@@ -34,21 +35,25 @@ class BookingService
         $startsAt = $data['starts_at']->copy()->utc();
         $endsAt = $data['ends_at']->copy()->utc();
 
-        $room = Room::with('office')->findOrFail($data['room_id']);
+        return DB::transaction(function () use ($user, $data, $startsAt, $endsAt) {
+            // Блокируем строку комнаты до проверки конфликта: одновременные брони одной
+            // комнаты выстраиваются в очередь и не могут пересечься.
+            $room = Room::with('office')->lockForUpdate()->findOrFail($data['room_id']);
 
-        $errors = $this->collectRuleViolations($room, $startsAt, $endsAt);
+            $errors = $this->collectRuleViolations($room, $startsAt, $endsAt);
 
-        if ($errors !== []) {
-            throw ValidationException::withMessages($errors);
-        }
+            if ($errors !== []) {
+                throw ValidationException::withMessages($errors);
+            }
 
-        return Booking::create([
-            'room_id' => $room->id,
-            'user_id' => $user->id,
-            'title' => $data['title'],
-            'starts_at' => $startsAt,
-            'ends_at' => $endsAt,
-        ]);
+            return Booking::create([
+                'room_id' => $room->id,
+                'user_id' => $user->id,
+                'title' => $data['title'],
+                'starts_at' => $startsAt,
+                'ends_at' => $endsAt,
+            ]);
+        });
     }
 
     /**
