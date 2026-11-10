@@ -158,9 +158,9 @@ git commit -m "Ревью API бронирования: разбор дефек�
 | `test_rejects_end_after_working_hours` | 19:45 → 20:15 (Москва) | `ValidationException`, ключ `ends_at` |
 | `test_accepts_working_hours_boundaries` | 09:00 → 09:15 и 19:45 → 20:00 | две брони созданы |
 | `test_rejects_booking_crossing_midnight` | 23:00 → 01:00 | `ValidationException`, ключ `ends_at`, сообщение «Бронь должна целиком помещаться в один рабочий день офиса.» |
-| `test_uses_office_timezone_not_request_offset` | комната Новосибирска, `starts_at` = 2026-11-02 07:00+03:00 (= 11:00 местного), `ends_at` = 08:00+03:00 | бронь создана (в Москве это 08:00 — нерабочее время, но комната в Новосибирске) |
-| `test_uses_office_timezone_for_moscow_room` | комната Москвы, `starts_at` = 2026-11-02 21:00+07:00 (= 14:00 местного в Москве), `ends_at` = 22:00+07:00 | бронь создана (в Новосибирске это 21:00 — нерабочее время) |
-| `test_rejects_time_outside_office_working_hours` | комната Новосибирска, `starts_at` = 05:00+03:00 (= 08:00 местного), `ends_at` = 06:00+03:00 (= 09:00 местного) | `ValidationException`, ключ `starts_at`, сообщение «Бронь должна начинаться не раньше 09:00 по местному времени офиса (Asia/Novosibirsk).» |
+| `test_uses_office_timezone_not_request_offset` | комната Новосибирска, `starts_at` = 2026-11-02 07:00+03:00 (= 11:00 местного), `ends_at` = 08:00+03:00 (= 12:00 местного) | бронь создана (в Москве это 07:00 — нерабочее время, но комната в Новосибирске) |
+| `test_uses_office_timezone_for_moscow_room` | комната Москвы, `starts_at` = 2026-11-02 21:00+07:00 (= 17:00 в Москве, 21:00 в Новосибирске), `ends_at` = 22:00+07:00 | бронь создана (в Новосибирске это 21:00 — нерабочее время) |
+| `test_rejects_time_outside_office_working_hours` | комната Новосибирска, `starts_at` = 04:00+03:00 (= 08:00 местного), `ends_at` = 05:00+03:00 (= 09:00 местного) | `ValidationException`, ключ `starts_at`, сообщение «Бронь должна начинаться не раньше 09:00 по местному времени офиса (Asia/Novosibirsk).» |
 | `test_rejects_overlapping_booking` | существующая бронь 10:00–11:00, новая 10:30–11:30 | `ValidationException`, ключ `starts_at` |
 | `test_allows_bookings_touching_in_time` | существующая 10:00–11:00, новая 11:00–12:00 | вторая бронь создана |
 | `test_allows_same_time_in_another_room` | существующая 10:00–11:00 в комнате 1, новая в комнате 2 | вторая бронь создана |
