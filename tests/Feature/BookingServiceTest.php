@@ -126,6 +126,18 @@ class BookingServiceTest extends TestCase
         );
     }
 
+    public function test_rejects_fractional_seconds(): void
+    {
+        $this->assertRuleFails(
+            'starts_at',
+            $this->data(
+                $this->moscowRoom(),
+                '2026-11-02T10:00:00.500000+03:00',
+                '2026-11-02T11:00:00.500000+03:00',
+            ),
+        );
+    }
+
     public function test_rejects_start_before_working_hours(): void
     {
         $this->assertRuleFails(

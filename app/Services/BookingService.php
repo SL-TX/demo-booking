@@ -133,6 +133,8 @@ class BookingService
 
     private function isOnQuarterHourGrid(CarbonInterface $moment): bool
     {
-        return $moment->minute % self::GRID_MINUTES === 0 && $moment->second === 0;
+        return $moment->minute % self::GRID_MINUTES === 0
+            && $moment->second === 0
+            && $moment->micro === 0;
     }
 }

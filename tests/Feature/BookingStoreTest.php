@@ -164,6 +164,37 @@ class BookingStoreTest extends TestCase
         ])->assertStatus(422)->assertJsonValidationErrors(['starts_at']);
     }
 
+    public function test_rejects_fractional_seconds(): void
+    {
+        $this->postBooking([
+            'room_id' => $this->room->id,
+            'title' => 'Планёрка',
+            'starts_at' => '2026-11-02T10:00:00.500000+03:00',
+            'ends_at' => '2026-11-02T11:00:00.500000+03:00',
+        ])->assertStatus(422)->assertJsonValidationErrors(['starts_at']);
+    }
+
+    public function test_allows_same_time_in_another_room(): void
+    {
+        $anotherRoom = $this->moscowRoom();
+
+        $this->postBooking([
+            'room_id' => $this->room->id,
+            'title' => 'Первая',
+            'starts_at' => '2026-11-02T10:00:00+03:00',
+            'ends_at' => '2026-11-02T11:00:00+03:00',
+        ])->assertCreated();
+
+        $this->postBooking([
+            'room_id' => $anotherRoom->id,
+            'title' => 'В другой комнате',
+            'starts_at' => '2026-11-02T10:00:00+03:00',
+            'ends_at' => '2026-11-02T11:00:00+03:00',
+        ])->assertCreated();
+
+        $this->assertSame(2, Booking::count());
+    }
+
     public function test_rejects_ends_before_starts(): void
     {
         $this->postBooking([
