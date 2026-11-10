@@ -290,7 +290,7 @@ git commit -m "Правила брони: длительность, шаг 15 м
     - `rules(): array` → `['room_id' => ['required', 'integer', 'exists:rooms,id'], 'title' => ['required', 'string', 'max:255'], 'starts_at' => ['required', 'string', new Iso8601WithOffset], 'ends_at' => ['required', 'string', new Iso8601WithOffset]]`
     - `startsAt(): CarbonImmutable` — разобранное значение в UTC
     - `endsAt(): CarbonImmutable` — разобранное значение в UTC
-    - `room(): Room` — модель комнаты по `room_id`
+    - (метода `room()` нет: комнату с офисом загружает сервис — ему нужен `office.timezone`)
   - `BookingController::store(StoreBookingRequest $request, BookingService $bookings): JsonResponse` — 201 с моделью брони.
 
 - [ ] **Step 1: Написать падающие HTTP-тесты**
@@ -374,7 +374,6 @@ docker compose exec -T app php artisan test --filter=BookingStoreTest
 - `attributes(): array` → `['room_id' => 'комната', 'title' => 'название встречи', 'starts_at' => 'время начала', 'ends_at' => 'время окончания']` (подставляются в тексты правил).
 - `startsAt(): CarbonImmutable` → `CarbonImmutable::parse($this->string('starts_at')->toString())->utc()`
 - `endsAt(): CarbonImmutable` → то же для `ends_at`
-- `room(): Room` → `Room::with('office')->findOrFail($this->integer('room_id'))`
 
 - [ ] **Step 5: Переписать `store` в контроллере**
 
