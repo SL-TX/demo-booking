@@ -164,7 +164,7 @@ git commit -m "Ревью API бронирования: разбор дефек�
 | `test_rejects_overlapping_booking` | существующая бронь 10:00–11:00, новая 10:30–11:30 | `ValidationException`, ключ `starts_at` |
 | `test_allows_bookings_touching_in_time` | существующая 10:00–11:00, новая 11:00–12:00 | вторая бронь создана |
 | `test_allows_same_time_in_another_room` | существующая 10:00–11:00 в комнате 1, новая в комнате 2 | вторая бронь создана |
-| `test_same_moment_with_different_offset_is_a_conflict` | существующая `starts_at` = 2026-11-02 10:00 **+07:00**, новая = 2026-11-02 03:00 **+03:00** (тот же момент) | `ValidationException`, ключ `starts_at` |
+| `test_same_moment_with_different_offset_is_a_conflict` | существующая `starts_at` = 2026-11-02 10:00 **+03:00** (= 07:00Z), новая = 2026-11-02 07:00 **Z** (тот же момент, другое смещение) | `ValidationException`, ключ `starts_at`, сообщение «Комната занята в это время.» |
 
 Проверка исключения: `expectException(ValidationException::class)` + `expectExceptionMessageMatches('/Комната занята в это время\./')` либо проверка `$e->errors()` — для проверки ключа использовать:
 
